@@ -34,4 +34,5 @@ setup(name='repodono.jobs',
       entry_points="""
       # -*- Entry points: -*-
       """,
+      test_suite="repodono.jobs.tests.make_suite",
       )
