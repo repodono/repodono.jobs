@@ -48,6 +48,12 @@ class WDManagerTestCase(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             manager.execute('some_dir')
 
+    def test_base_manager_verify_run_kwargs(self):
+        manager = WDManager()
+        self.assertEqual(manager.verify_run_kwargs(some='kwargs'), {
+            'some': 'kwargs'
+        })
+
 
 class JobManagerTestCase(unittest.TestCase):
 

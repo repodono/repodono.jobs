@@ -44,6 +44,15 @@ class WDManager(object):
     def execute(self, working_dir, **kw):
         raise NotImplementedError
 
+    def verify_run_kwargs(self, **kw):
+        """
+        Optional step to verify that the kwargs passed to run is
+        acceptable.  Default simply return the identiy.  Should raise
+        ValueError if arguments are unacceptable.
+        """
+
+        return kw
+
     def run(self, **kw):
         if self.root is NotImplemented:
             raise ManagerRuntimeError('manager not started')
