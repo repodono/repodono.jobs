@@ -1,85 +1,39 @@
 # -*- coding: utf-8 -*-
 """
-Manager test case
+Simple lifecycles test cases
 """
 
+import io
+import logging
 import unittest
 from textwrap import dedent
 
 import sys
 from os.path import exists
-from os.path import isdir
 from os.path import join
 from time import sleep
 
-from repodono.jobs.manager import WDManager
-from repodono.jobs.manager import TaskRunnerManager
-from repodono.jobs.exc import ManagerRuntimeError
-
-
-class WDManagerTestCase(unittest.TestCase):
-
-    def test_base_manager_simple(self):
-        manager = WDManager()
-        manager.start()
-        root = manager.root
-        self.assertTrue(isdir(root))
-        manager.stop()
-        self.assertFalse(isdir(root))
-
-    def test_base_manager_stop(self):
-        manager = WDManager()
-        manager.stop()  # should not error even when not started.
-
-    def test_base_manager_run(self):
-        manager = WDManager()
-
-        with self.assertRaises(ManagerRuntimeError):
-            # not started yet
-            manager.run()
-
-        manager.start()
-        with self.assertRaises(NotImplementedError):
-            # since the implementation was not implemented
-            manager.run()
-
-        manager.stop()
-        with self.assertRaises(ManagerRuntimeError):
-            # not started yet
-            manager.run()
-
-    def test_base_manager_execute(self):
-        manager = WDManager()
-        with self.assertRaises(NotImplementedError):
-            manager.execute('some_dir')
-
-
-class TaskRunnerManagerTestCase(unittest.TestCase):
-
-    def test_execute(self):
-        manager = TaskRunnerManager()
-        with self.assertRaises(NotImplementedError):
-            manager.execute('some_dir')
-
-    def test_get_args(self):
-        manager = TaskRunnerManager()
-        with self.assertRaises(NotImplementedError):
-            manager.get_args('some_dir')
+from repodono.jobs.manager import JobManager
+from repodono.jobs.manager import logger as manager_logger
 
 
 class DummyManagerTestCase(unittest.TestCase):
 
-    class DummyManager(TaskRunnerManager):
+    class DummyManager(JobManager):
         def get_args(self, working_dir, s, t, **kw):
-            target = join(working_dir, 'output.txt')
+            target = join(working_dir, 'out')
 
             prog = dedent("""
             from time import sleep
+            from os.path import dirname
+            from os.path import isdir
 
+            target = '%(target)s'
             sleep(%(t)f)
 
-            with open('%(target)s', 'w') as fd:
-                fd.write('%(s)s')
+            if isdir(dirname(target)):
+                with open(target, 'w') as fd:
+                    fd.write('%(s)s')
             """) % locals()
 
             return (sys.executable, '-c', prog)
@@ -87,13 +41,28 @@ class DummyManagerTestCase(unittest.TestCase):
     def setUp(self):
         self.manager = self.DummyManager()
         self.manager.start()
+        self.stream = io.StringIO()
+        self.handler = logging.StreamHandler(self.stream)
+        manager_logger.addHandler(self.handler)
 
     def tearDown(self):
         self.manager.stop()
+        manager_logger.removeHandler(self.handler)
 
     def test_execute(self):
         working_dir = self.manager.run(s='hello', t=0.1)
-        f = join(working_dir, 'output.txt')
+        self.assertEqual(self.manager.list_working_dir(working_dir), [])
+        f = join(working_dir, 'out')
         self.assertFalse(exists(f))
         sleep(0.3)  # account for startup overhead.
+        self.assertEqual(self.manager.list_working_dir(working_dir), ['out'])
         self.assertTrue(exists(f))
+        self.assertEqual(self.manager.lookup_path(working_dir, 'out'), f)
+        self.assertEqual(self.manager.get_result_by_key(
+            working_dir, 'out'), 'hello')
+
+    def test_stray_process(self):
+        self.manager.run(s='hello', t=0.05)
+        self.manager.stop()
+        self.assertIn('is still running', self.stream.getvalue())
+        sleep(0.2)  # to actually let it terminate
