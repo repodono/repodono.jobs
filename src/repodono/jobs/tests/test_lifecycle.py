@@ -28,7 +28,7 @@ class DummyManagerTestCase(unittest.TestCase):
             from os.path import dirname
             from os.path import isdir
 
-            target = '%(target)s'
+            target = %(target)r
             sleep(%(t)f)
 
             if isdir(dirname(target)):

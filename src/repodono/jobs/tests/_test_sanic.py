@@ -33,7 +33,7 @@ class DummyManager(JobManager):
         from os.path import dirname
         from os.path import isdir
 
-        target = '%(target)s'
+        target = %(target)r
         timeout = %(timeout)f
 
         if not timeout:
