@@ -11,7 +11,10 @@ install:
   - "venv\\Scripts\\activate.bat"
 
   - pip install coverage
-  - pip install sanic
+  - ps: >-
+      if ($env:PYTHON_VERSION -ge '35') {
+        pip install -r requirements_windows.txt
+      }
   - python setup.py develop
 
 test_script:

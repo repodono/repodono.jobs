@@ -14,10 +14,6 @@ matrix:
       python: 3.6
     - language: python
       python: 3.7-dev
-    - language: python
-      python: pypy
-    - language: python
-      dist: trusty
 
     # no Python on OS X still, using node_js for now...
     - language: node_js
@@ -62,7 +58,9 @@ before_install:
 
 install:
   - pip install coverage flake8
-  - pip install sanic
+  - if [[ ! `python -c 'import sys;print(".".join(str(i) for i in sys.version_info))'` < "3.5" ]]; then
+      pip install sanic aiohttp;
+    fi
   - python setup.py develop
 script:
   - flake8 setup.py src
