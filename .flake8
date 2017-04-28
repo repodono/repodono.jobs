@@ -1,0 +1,6 @@
+[flake8]
+ignore =
+    # E999: don't care about syntax error in 3.4 for async keywords
+    E999,
+    # W503: default ignore for some reason not applied;
+    W503
