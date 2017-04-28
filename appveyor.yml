@@ -1,0 +1,24 @@
+environment:
+  matrix:
+    - PYTHON: "C:\\Python34"
+    - PYTHON: "C:\\Python35"
+    - PYTHON: "C:\\Python36"
+
+install:
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - pip install virtualenv
+  - virtualenv --clear venv
+  - "venv\\Scripts\\activate.bat"
+
+  - pip install coverage
+  - pip install sanic
+  - python setup.py develop
+
+test_script:
+  - coverage run -m unittest repodono.jobs.tests.make_suite
+  - coverage report -m --include=src/*
+
+artifacts:
+  - path: dist\*
+
+build: off
