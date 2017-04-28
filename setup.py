@@ -2,6 +2,16 @@ from setuptools import setup, find_packages
 
 version = '0.0'
 
+classifiers = """
+Development Status :: 4 - Beta
+Environment :: Console
+Intended Audience :: Developers
+License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)
+Operating System :: OS Independent
+Programming Language :: Python :: 3.5
+Programming Language :: Python :: 3.6
+""".strip().splitlines()
+
 long_description = (
     open('README.rst').read()
     + '\n' +
@@ -13,11 +23,7 @@ setup(
     version=version,
     description="Simple job server",
     long_description=long_description,
-    # Get more strings from
-    # http://pypi.python.org/pypi?%3Aaction=list_classifiers
-    classifiers=[
-        "Programming Language :: Python",
-    ],
+    classifiers=classifiers,
     keywords='',
     author='Tommy Yu',
     author_email='tommy.yu@auckland.ac.nz',
@@ -35,6 +41,7 @@ setup(
     },
     namespace_packages=['repodono'],
     include_package_data=True,
+    python_requires='>=3.4',
     zip_safe=False,
     install_requires=[
         'setuptools',
