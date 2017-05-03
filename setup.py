@@ -32,11 +32,18 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     extras_require={
+        'calmjs': [
+            'calmjs>=2.1.0',
+        ],
+        'requirejs': [
+            'calmjs.rjs',
+        ],
         'sanic': [
             'sanic>=0.4',
         ],
         'dev': [
             'aiohttp',
+            'calmjs.dev>=1.0.1,<2',
         ],
     },
     namespace_packages=['repodono'],
@@ -47,8 +54,14 @@ setup(
         'setuptools',
         # -*- Extra requirements: -*-
     ],
-    entry_points="""
-    # -*- Entry points: -*-
-    """,
+    entry_points={
+        'calmjs.module': [
+            'repodono.jobs = repodono.jobs',
+        ],
+        'calmjs.module.tests': [
+            'repodono.jobs.tests = repodono.jobs.tests',
+        ],
+    },
+    calmjs_module_registry=['calmjs.module'],
     test_suite="repodono.jobs.tests.make_suite",
 )
