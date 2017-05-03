@@ -21,7 +21,11 @@ class JobServer(object):
     """
 
     def __init__(
-            self, job_manager, base_url='/', name=None, hook_start_stop=True):
+            self, job_manager,
+            base_url='/',
+            route_execute='execute',
+            route_poll='poll',
+            name=None, hook_start_stop=True):
         """
         Takes in a subclass of job_manager, and provide some standard
         ways of interfacing with it.
@@ -29,6 +33,8 @@ class JobServer(object):
 
         self.job_manager = job_manager
         self.base_url = base_url
+        self.route_execute = route_execute
+        self.route_poll = route_poll
         self.name = name or '%s_%d' % (__name__, id(self))
         self.blueprint = Blueprint(self.name)
         self.setup(hook_start_stop)
@@ -74,7 +80,11 @@ class JobServer(object):
         # assigned to it (can only be on the unbound method on the class
         # definition itself).
 
-        @blueprint.route('/execute', methods=['POST'])
+        route_execute = '/%s' % self.route_execute
+        route_poll = '/%s/<job_id:string>' % self.route_poll
+        route_poll_result = '%s/<key:string>' % route_poll
+
+        @blueprint.route(route_execute, methods=['POST'])
         async def execute(request):
             """
             The post end point for starting a job
@@ -92,15 +102,15 @@ class JobServer(object):
             return self._response(
                 {
                     'status': 'created',
-                    'location': '/poll/' + job_id,
+                    'location': '/%s/%s' % (self.route_poll, job_id),
                 },
                 headers={
-                    'Location': '/poll/' + job_id,
+                    'Location': '/%s/%s' % (self.route_poll, job_id),
                 },
                 status=201,
             )
 
-        @blueprint.route('/poll/<job_id:string>')
+        @blueprint.route(route_poll)
         async def poll(request, job_id):
             if job_id not in self.mapping:
                 return self._error(error_msg='no such job_id', status=404)
@@ -126,7 +136,7 @@ class JobServer(object):
                     working_dir)
                 return self._response(result)
 
-        @blueprint.route('/poll/<job_id:string>/<key:string>')
+        @blueprint.route(route_poll_result)
         async def results(request, job_id, key):
             if job_id not in self.mapping:
                 return self._error(error_msg='no such job_id', status=404)
