@@ -9,7 +9,7 @@ var default_kwargs = {
 
 var Client = function(kwargs) {
     for (var key in default_kwargs) {
-        this[key] = kwargs[key] || default_kwargs[key];
+        this[key] = kwargs && kwargs[key] || default_kwargs[key];
     }
 };
 
@@ -39,7 +39,8 @@ Client.prototype.raw_request = function(before, after) {
 };
 
 
-Client.prototype.generate_request = function(xhr) {
+//Client.prototype.generate_request = function(xhr) {
+Client.prototype.generate_request = function() {
     throw Error('NotImplementedError');
 };
 
@@ -69,10 +70,10 @@ Client.prototype.execute = function() {
 
 Client.prototype.poll = function(poll_url) {
     /*
-    Legacy polling behavior.
+    Legacy styled polling behavior.
     */
 
-    var self = this
+    var self = this;
 
     var before = function(xhr) {
         xhr.open('GET', poll_url, true);
@@ -89,7 +90,7 @@ Client.prototype.poll = function(poll_url) {
         }
         else if (obj.status == 'success') {
             self.set_status_msg('status', 'success');
-            self.response_job_success(poll_url, obj.keys)
+            self.response_job_success(poll_url, obj.keys);
         }
     };
 
@@ -103,7 +104,8 @@ Client.prototype.poll = function(poll_url) {
 };
 
 
-Client.prototype.response_job_success = function(poll_url, keys) {
+// Client.prototype.response_job_success = function(poll_url, keys) {
+Client.prototype.response_job_success = function() {
     throw Error('NotImplementedError');
 };
 
