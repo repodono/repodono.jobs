@@ -18,6 +18,12 @@ long_description = (
     open('CHANGES.rst').read()
     + '\n')
 
+package_json = {
+    "devDependencies": {
+        "eslint": "~3.15.0",
+    }
+}
+
 setup(
     name='repodono.jobs',
     version=version,
@@ -31,6 +37,7 @@ setup(
     license='gpl',
     packages=find_packages('src'),
     package_dir={'': 'src'},
+    package_json=package_json,
     extras_require={
         'calmjs': [
             'calmjs>=2.1.0',

@@ -1,10 +1,20 @@
 environment:
   matrix:
     - PYTHON: "C:\\Python34"
+      nodejs_version: "4.6"
+      BROWSER: "PhantomJS"
     - PYTHON: "C:\\Python35"
+      nodejs_version: "6.9"
+      BROWSER: "Firefox"
     - PYTHON: "C:\\Python36"
+      nodejs_version: "7.4"
+      BROWSER: "IE"
+matrix:
+  allow_failures:
+    - BROWSER: "IE"
 
 install:
+  - choco install firefox
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - pip install virtualenv
   - virtualenv --clear venv
@@ -15,11 +25,18 @@ install:
       if ($env:PYTHON_VERSION -ge '35') {
         pip install -r requirements_windows.txt
       }
+  - pip install calmjs.dev calmjs.rjs aiohttp
   - python setup.py develop
+
+  # doing the env in this directory to save build time/bandwidth
+  - calmjs npm repodono.jobs[requirejs,dev] --install -D
+  - npm install karma-ie-launcher
 
 test_script:
   - coverage run -m unittest repodono.jobs.tests.make_suite
   - coverage report -m --include=src/*
+
+  - calmjs karma -c --cover-test --browser=%BROWSER% rjs repodono.jobs
 
 artifacts:
   - path: dist\*

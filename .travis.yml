@@ -3,34 +3,54 @@ matrix:
   allow_failures:
     - os: osx
     - python: 3.7-dev
-    - python: pypy
-    - python: pypy3.3-5.2-alpha1
+    - env: TRAVIS_NODE_VERSION=7
   include:
     - language: python
+      dist: trusty
       python: 3.4
+      env:
+        - TRAVIS_NODE_VERSION=4.6
+        - BROWSER=Chrome
+      addons:
+        apt:
+          sources:
+            - google-chrome
+          packages:
+            - google-chrome-stable
     - language: python
       python: 3.5
+      env:
+        - TRAVIS_NODE_VERSION=6.9
+        - BROWSER=Firefox
     - language: python
       python: 3.6
+      env:
+        - TRAVIS_NODE_VERSION=7
+        - BROWSER=PhantomJS
     - language: python
       python: 3.7-dev
-
-    # no Python on OS X still, using node_js for now...
+      env:
+        - TRAVIS_NODE_VERSION=7
+        - BROWSER=PhantomJS
+    # test different versions of Node.js on osx
     - language: node_js
       node_js: 4.6
       os: osx
       env:
         - TRAVIS_PYTHON_VERSION=3.4.5
+        - BROWSER=PhantomJS
     - language: node_js
       node_js: 6.9
       os: osx
       env:
         - TRAVIS_PYTHON_VERSION=3.5.3
+        - BROWSER=Safari
     - language: node_js
       node_js: 7.4
       os: osx
       env:
         - TRAVIS_PYTHON_VERSION=3.6.0
+        - BROWSER=Safari
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
@@ -61,17 +81,49 @@ install:
   - if [[ ! `python -c 'import sys;print(".".join(str(i) for i in sys.version_info))'` < "3.5" ]]; then
       pip install sanic aiohttp;
     fi
+  - pip install calmjs.dev calmjs.rjs aiohttp
   - python setup.py develop
+
+  # Install the environment for the JS tests via karma
+  - calmjs npm repodono.jobs[requirejs,dev] --install -D
+  # out-of-band installation of platform specific dependencies
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      npm install karma-safari-launcher ;
+    fi
+  - export CALMJS_TEST_ENV=.
+
 script:
   - flake8 setup.py src
   - coverage run --include=src/* -m unittest repodono.jobs.tests.make_suite
   - coverage report -m
 
+  # generate bundle/tests
+  - mkdir manual
+  # eslint 3 only works in nodejs 4+
+  - if [[ "$TRAVIS_NODE_VERSION" != "0.12" ]]; then
+      eslint "src/**/*.js" ;
+    fi
+  - calmjs karma -c --cover-test --browser=$BROWSER rjs repodono.jobs --build-dir=manual
+
 after_success:
+  - coverage report -m
   # only submit coverage when testing under linux.
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      rvm default;
+      gem install coveralls-lcov;
+      export PROJ_DIR=`pwd`/;
+      export PATH=$PATH:`pwd`/node_modules/.bin;
+      npm install remap-istanbul;
       pip install coveralls;
-      coveralls
+      cd manual;
+      remap-istanbul -i ../coverage/coverage.json -t lcovonly -o remapped.lcov;
+      sed -i "s#SF:../#SF:#" remapped.lcov;
+      sed -i "s#SF:${PROJ_DIR}#SF:#" remapped.lcov;
+      cd ..;
+      echo "running coveralls-lcov conversion";
+      coveralls-lcov -v -n manual/remapped.lcov > coverage.json ;
+      echo "running coveralls with merge";
+      coveralls --merge=coverage.json ;
     fi
 
 branches:
